@@ -2,39 +2,9 @@ import threading
 import random
 import logging
 import time
+from typing import List
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d [%(threadName)s] - %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
-
-"""
-    Clase listaFinita, extiende la clase list ([]) de modo que puede establecerse un limite máximo
-    al tamaño (cantidad de objetos) de la lista.
-
-    Uso:
-    Declaración
-    lista = listaFinita(Numero_Maximo_Items)
-    # Crea una lista VACIA que admitirá hasta un máximo de Numero_Maximo_Items items
-
-    El acceso a los elementos es igual que en una lista standard, la diferencia es que
-    si se intenta agregar un elemento cuando la lista tiene Numero_Maximo_Items items, dara
-    un mensaje de error y terminara el programa.
-
-    Ejemplos
-    Acceso al elemento i:
-
-    a = lista[i]
-
-    insertar un elemento en la posicón i.
-    lista.insert(i, dato)  # si i es mayor que Numero_Maximo_Items termina el programa y da error
-
-    o
-
-    lista[i] = dato   # Si i es mayor que Numero_Maximo_Items termina el programa y da error.
-
-    agregar un elemento al final de la lista
-
-    lista.append(dato)  # Si la lista tiene Numero_Maximo_Items termina el programa y da error.
-
-"""
 
 class listaFinita(list):
 
@@ -63,9 +33,10 @@ class listaFinita(list):
 
 
 class Productor(threading.Thread):
-    def __init__(self, lista = listaFinita):
+    def __init__(self, lista1 = listaFinita, lista2 = List):
         super().__init__()
-        self.lista = lista
+        self.lista = lista1
+        self.paises = lista2
         self.lockProductor = threading.Lock()
 
     def run(self):
@@ -74,7 +45,7 @@ class Productor(threading.Thread):
             try:
                 while self.lista.full():
                     pass
-                self.lista.append(random.randint(0,100))
+                self.lista.append(self.paises[random.randint( 0,len(self.paises)-1 )])
                 logging.info(f'produjo el item: {self.lista[-1]}')
                 time.sleep(random.randint(1,5))
             finally:
@@ -96,8 +67,10 @@ class Consumidor(threading.Thread):
             try:
                 while len(self.lista) == 0:
                     pass
-                elemento = self.lista.pop(0)
-                logging.info(f'consumio el item {elemento}')
+                tupla = self.lista.pop(0)
+                pais = tupla[0]
+                capital = tupla[1]
+                logging.info(f' la capital de {pais} es {capital}')
                 time.sleep(random.randint(1,5))
             finally:
                 self.lockConsumidor.release()
@@ -107,9 +80,14 @@ class Consumidor(threading.Thread):
 def main():
     hilos = []
     lista = listaFinita(4)
+    listaPaises = [("España", "Madrid"), ("Francia", "París"), ("Italia", "Roma"), ("Inglaterra", "Londres"),
+                   ("Alemania", "Berlín"), ("Rusia", "Moscú"), ("Turquía", "Istambul"), ("China", "Pekín"),
+                   ("Japón", "Tokio"), ("Emiratos Árabes", "Dubai"), ("Argentina", "Buenos Aires"),
+                   ("Brasil", "Brasilia"), ("Colombia", "Bogotá"),
+                   ("Uruguay", "Montevideo"), ]
 
     for i in range(4):
-        productor = Productor(lista)
+        productor = Productor(lista, listaPaises)
         consumidor = Consumidor(lista)
         hilos.append(productor)
         hilos.append(consumidor)
